@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "385241482730",
+    "firebase_url": "https://projeto-integrador-23b4c-default-rtdb.firebaseio.com",
+    "project_id": "projeto-integrador-23b4c",
+    "storage_bucket": "projeto-integrador-23b4c.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385241482730:android:61c913ec1ea00c41ff1e93",
+        "android_client_info": {
+          "package_name": "com.example.atividade_5"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAap5Vu667qz31FvJNVkK9bTOqYCXakIuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385241482730:android:1e037eeb3ff64ae3ff1e93",
+        "android_client_info": {
+          "package_name": "com.example.time_track_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAap5Vu667qz31FvJNVkK9bTOqYCXakIuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385241482730:android:40e94ba808ce966fff1e93",
+        "android_client_info": {
+          "package_name": "com.example.timetrackmanagement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAap5Vu667qz31FvJNVkK9bTOqYCXakIuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

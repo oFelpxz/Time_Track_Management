@@ -1,11 +1,14 @@
 // ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors, library_private_types_in_public_api
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'sign_up_screen.dart';
 import 'forgot_password_screen.dart';
 import 'logged_in_screen.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
