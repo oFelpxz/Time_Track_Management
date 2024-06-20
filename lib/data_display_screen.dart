@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:intl/intl.dart';
 
 class DataDisplayScreen extends StatelessWidget {
   final DatabaseReference databaseReference;
@@ -31,6 +32,7 @@ class DataDisplayScreen extends StatelessWidget {
               .where((entry) => entry.value['status'] == 'Pendente')
               .map((entry) {
             return {
+              'key': entry.key,
               'curso': entry.value['curso'],
               'disciplina': entry.value['disciplina'],
               'diaSemana': entry.value['diaSemana'],
@@ -40,6 +42,7 @@ class DataDisplayScreen extends StatelessWidget {
               'sala': entry.value['sala'],
               'status': entry.value['status'],
               'dataRegistro': entry.value['dataRegistro'],
+              'professor': entry.value['professor'],
             };
           }).toList();
 
@@ -53,7 +56,41 @@ class DataDisplayScreen extends StatelessWidget {
                   '${item['diaSemana']}: ${item['horaInicio']} - ${item['horaTermino']}\n'
                       'Bloco: ${item['bloco']}, Sala: ${item['sala']}\n'
                       'Status: ${item['status']}\n'
-                      'Data de Registro: ${item['dataRegistro']}',
+                      'Data de Registro: ${item['dataRegistro']}\n'
+                      'Professor: ${item['professor']}',
+                ),
+                trailing: TextButton(
+                  onPressed: () {
+                    // Obtém a data atual
+                    String currentDate =
+                    DateFormat('dd/MM/yyyy, HH:mm').format(DateTime.now());
+
+                    // Adiciona um novo registro no caminho 'usuarios/cursos/Registrado'
+                    databaseReference
+                        .child('usuarios/cursos/Registrado')
+                        .push()
+                        .set({
+                      'curso': item['curso'],
+                      'disciplina': item['disciplina'],
+                      'diaSemana': item['diaSemana'],
+                      'horaInicio': item['horaInicio'],
+                      'horaTermino': item['horaTermino'],
+                      'bloco': item['bloco'],
+                      'sala': item['sala'],
+                      'status': 'Registrado',
+                      'dataRegistro': currentDate,
+                      'professor': item['professor']
+                    }).then((_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Registro criado com status registrado')),
+                      );
+                    }).catchError((error) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Erro ao criar registro: $error')),
+                      );
+                    });
+                  },
+                  child: Text('Registrar'),
                 ),
               );
             },
@@ -96,6 +133,7 @@ class _CreateMateriaDialogState extends State<CreateMateriaDialog> {
   final _salaController = TextEditingController();
   final _statusController = TextEditingController();
   final _dataRegistroController = TextEditingController();
+  final _professorController = TextEditingController();
 
   @override
   void dispose() {
@@ -108,6 +146,7 @@ class _CreateMateriaDialogState extends State<CreateMateriaDialog> {
     _salaController.dispose();
     _statusController.dispose();
     _dataRegistroController.dispose();
+    _professorController.dispose();
     super.dispose();
   }
 
@@ -210,6 +249,16 @@ class _CreateMateriaDialogState extends State<CreateMateriaDialog> {
                   return null;
                 },
               ),
+              TextFormField(
+                controller: _professorController,
+                decoration: InputDecoration(labelText: 'Professor'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor, insira o nome do professor';
+                  }
+                  return null;
+                },
+              ),
             ],
           ),
         ),
@@ -224,8 +273,11 @@ class _CreateMateriaDialogState extends State<CreateMateriaDialog> {
         ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              // Formata a data de registro no formato dd/MM/yyyy, HH:mm
+              String formattedDate = DateFormat('dd/MM/yyyy, HH:mm').format(DateTime.now());
+
               // Adiciona a nova matéria ao banco de dados
-              widget.databaseReference.child('usuarios/cursos').push().set({
+              widget.databaseReference.child('usuarios/cursos/${_disciplinaController.text}').set({
                 'curso': _cursoController.text,
                 'disciplina': _disciplinaController.text,
                 'diaSemana': _diaSemanaController.text,
@@ -234,7 +286,8 @@ class _CreateMateriaDialogState extends State<CreateMateriaDialog> {
                 'bloco': _blocoController.text,
                 'sala': _salaController.text,
                 'status': _statusController.text,
-                'dataRegistro': _dataRegistroController.text,
+                'dataRegistro': formattedDate,
+                'professor': _professorController.text,
               }).then((_) {
                 Navigator.of(context).pop();
               }).catchError((error) {

@@ -14,6 +14,7 @@ class LoggedInScreen extends StatefulWidget {
 class _LoggedInScreenState extends State<LoggedInScreen> {
   final databaseReference = FirebaseDatabase.instance.ref();
   List<Map<String, dynamic>> aulas = [];
+  List<String> professores = [];
   Map<String, int> diasSemanaCount = {
     'Segunda-Feira': 0,
     'Terça-Feira': 0,
@@ -23,6 +24,7 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
     'Sábado': 0,
     'Domingo': 0,
   };
+  String? selectedProfessor;
 
   @override
   void initState() {
@@ -41,6 +43,7 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
       Map<dynamic, dynamic> data = snapshot.snapshot.value as Map<dynamic, dynamic>;
       print(data);
       aulas.clear();
+      professores.clear();
       diasSemanaCount.updateAll((key, value) => 0);
 
       // Adiciona cada aula à lista e conta os dias da semana
@@ -50,7 +53,12 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
           'horaInicio': value['horaInicio'],
           'horaTermino': value['horaTermino'],
           'diaSemana': value['diaSemana'],
+          'dataRegistro': value['dataRegistro'],
+          'professor': value['professor'],
         });
+        if (!professores.contains(value['professor'])) {
+          professores.add(value['professor']);
+        }
         diasSemanaCount[value['diaSemana']] = (diasSemanaCount[value['diaSemana']] ?? 0) + 1;
       });
       // Atualiza o estado da tela
@@ -62,6 +70,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    List<Map<String, dynamic>> filteredAulas = selectedProfessor == null
+        ? aulas
+        : aulas.where((aula) => aula['professor'] == selectedProfessor).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Área Logada'),
@@ -94,10 +106,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
               title: Text('Gerenciamento de Pontos'),
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                    builder: (context) =>
-                    DataDisplayScreen(databaseReference: databaseReference)),);
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          DataDisplayScreen(databaseReference: databaseReference)),);
                 // Navegar para outra tela
               },
             ),
@@ -127,12 +139,20 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            Text(
-              'Horas trabalhadas na semana',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            DropdownButton<String>(
+              hint: Text("Selecione o professor"),
+              value: selectedProfessor,
+              onChanged: (String? newValue) {
+                setState(() {
+                  selectedProfessor = newValue;
+                });
+              },
+              items: professores.map<DropdownMenuItem<String>>((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
             ),
             SizedBox(height: 20),
             Expanded(
@@ -210,7 +230,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 0,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Segunda-Feira']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Segunda-Feira')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -221,7 +244,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 1,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Terça-Feira']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Terça-Feira')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -232,7 +258,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 2,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Quarta-Feira']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Quarta-Feira')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -243,7 +272,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 3,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Quinta-Feira']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Quinta-Feira')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -254,7 +286,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 4,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Sexta-Feira']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Sexta-Feira')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -265,7 +300,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 5,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Sábado']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Sábado')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -276,7 +314,10 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
                       x: 6,
                       barRods: [
                         BarChartRodData(
-                          toY: diasSemanaCount['Domingo']!.toDouble(),
+                          toY: filteredAulas
+                              .where((aula) => aula['diaSemana'] == 'Domingo')
+                              .length
+                              .toDouble(),
                           color: Colors.lightBlueAccent,
                           width: 15,
                           borderSide: BorderSide(color: Colors.greenAccent, width: 1),
@@ -288,27 +329,25 @@ class _LoggedInScreenState extends State<LoggedInScreen> {
               ),
             ),
             SizedBox(height: 20),
-            Text(
-              'Aulas dadas na semana',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            if (selectedProfessor != null) ...[
+              Text(
+                'Aulas do professor $selectedProfessor',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                itemCount: aulas.length,
-                itemBuilder: (context, index) {
-                  final aula = aulas[index];
-                  return ListTile(
-                    title: Text(aula['disciplina']),
-                    subtitle: Text(
-                        '${aula['diaSemana']}: ${aula['horaInicio']} - ${aula['horaTermino']}'),
-                  );
-                },
+              Expanded(
+                child: ListView.builder(
+                  itemCount: filteredAulas.length,
+                  itemBuilder: (context, index) {
+                    var aula = filteredAulas[index];
+                    return ListTile(
+                      title: Text(aula['disciplina']),
+                      subtitle: Text(
+                          '${aula['diaSemana']}, ${aula['horaInicio']} - ${aula['horaTermino']},${aula['dataRegistro']}'),
+                    );
+                  },
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
