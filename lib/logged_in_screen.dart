@@ -1,10 +1,65 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, use_key_in_widget_constructors
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:time_track_management/main.dart';
 
+import 'data_display_screen.dart';
+import 'monthly_report_screen.dart';
 
-class LoggedInScreen extends StatelessWidget {
+class LoggedInScreen extends StatefulWidget {
+  @override
+  _LoggedInScreenState createState() => _LoggedInScreenState();
+}
+
+class _LoggedInScreenState extends State<LoggedInScreen> {
+  final databaseReference = FirebaseDatabase.instance.ref();
+  List<Map<String, dynamic>> aulas = [];
+  Map<String, int> diasSemanaCount = {
+    'Segunda-Feira': 0,
+    'Terça-Feira': 0,
+    'Quarta-Feira': 0,
+    'Quinta-Feira': 0,
+    'Sexta-Feira': 0,
+    'Sábado': 0,
+    'Domingo': 0,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAulas();
+  }
+
+  Future<void> fetchAulas() async {
+    try {
+      // Consulta os dados do Firebase
+      DatabaseEvent snapshot = await databaseReference
+          .child('usuarios/cursos/Registrado')
+          .once();
+
+      // Extrai os dados da consulta
+      Map<dynamic, dynamic> data = snapshot.snapshot.value as Map<dynamic, dynamic>;
+      print(data);
+      aulas.clear();
+      diasSemanaCount.updateAll((key, value) => 0);
+
+      // Adiciona cada aula à lista e conta os dias da semana
+      data.forEach((key, value) {
+        aulas.add({
+          'disciplina': value['disciplina'],
+          'horaInicio': value['horaInicio'],
+          'horaTermino': value['horaTermino'],
+          'diaSemana': value['diaSemana'],
+        });
+        diasSemanaCount[value['diaSemana']] = (diasSemanaCount[value['diaSemana']] ?? 0) + 1;
+      });
+      // Atualiza o estado da tela
+      setState(() {});
+    } catch (e) {
+      print('Erro ao buscar aulas: ${e.toString()}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,15 +82,42 @@ class LoggedInScreen extends StatelessWidget {
               ),
             ),
             ListTile(
-              title: Text('Opção 1'),
+              title: Text('Gráfico de Aulas Ministradas'),
               onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoggedInScreen()),
+                );
+              },
+            ),
+            ListTile(
+              title: Text('Gerenciamento de Pontos'),
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                    builder: (context) =>
+                    DataDisplayScreen(databaseReference: databaseReference)),);
                 // Navegar para outra tela
               },
             ),
             ListTile(
-              title: Text('Opção 2'),
+              title: Text('Relatório de Pontos'),
               onTap: () {
-                // Navegar para outra tela
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MonthlyReportScreen()),
+                );
+              },
+            ),
+            ListTile(
+              title: Text('Logout'),
+              onTap: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => MyApp()),
+                      (Route<dynamic> route) => false,
+                );
               },
             ),
           ],
@@ -61,56 +143,146 @@ class LoggedInScreen extends StatelessWidget {
                   barTouchData: BarTouchData(enabled: false),
                   titlesData: FlTitlesData(
                     show: true,
-                    bottomTitles: SideTitles(
-                      showTitles: true,
-                      getTextStyles: (context, value) => const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const style = TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          );
+                          Widget text;
+                          switch (value.toInt()) {
+                            case 0:
+                              text = const Text('Seg', style: style);
+                              break;
+                            case 1:
+                              text = const Text('Ter', style: style);
+                              break;
+                            case 2:
+                              text = const Text('Qua', style: style);
+                              break;
+                            case 3:
+                              text = const Text('Qui', style: style);
+                              break;
+                            case 4:
+                              text = const Text('Sex', style: style);
+                              break;
+                            case 5:
+                              text = const Text('Sáb', style: style);
+                              break;
+                            case 6:
+                              text = const Text('Dom', style: style);
+                              break;
+                            default:
+                              text = const Text('', style: style);
+                              break;
+                          }
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            child: text,
+                          );
+                        },
+                        reservedSize: 28,
                       ),
-                      margin: 16,
-                      getTitles: (double value) {
-                        switch (value.toInt()) {
-                          case 0:
-                            return 'Seg';
-                          case 1:
-                            return 'Ter';
-                          case 2:
-                            return 'Qua';
-                          case 3:
-                            return 'Qui';
-                          case 4:
-                            return 'Sex';
-                          case 5:
-                            return 'Sáb';
-                          case 6:
-                            return 'Dom';
-                          default:
-                            return '';
-                        }
-                      },
                     ),
-                    leftTitles: SideTitles(
-                      showTitles: true,
-                      getTextStyles: (context, value) => const TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          const style = TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          );
+                          return Text('${value.toInt()}', style: style);
+                        },
+                        reservedSize: 28,
                       ),
-                      margin: 16,
                     ),
                   ),
                   borderData: FlBorderData(
                     show: false,
                   ),
                   barGroups: [
-                    BarChartGroupData(x: 0, barRods: [BarChartRodData(y: 8, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
-                    BarChartGroupData(x: 1, barRods: [BarChartRodData(y: 7, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
-                    BarChartGroupData(x: 2, barRods: [BarChartRodData(y: 6, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
-                    BarChartGroupData(x: 3, barRods: [BarChartRodData(y: 5, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
-                    BarChartGroupData(x: 4, barRods: [BarChartRodData(y: 9, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
-                    BarChartGroupData(x: 5, barRods: [BarChartRodData(y: 5, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
-                    BarChartGroupData(x: 6, barRods: [BarChartRodData(y: 3, colors: [Colors.lightBlueAccent, Colors.greenAccent])]),
+                    BarChartGroupData(
+                      x: 0,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Segunda-Feira']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 1,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Terça-Feira']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 2,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Quarta-Feira']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 3,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Quinta-Feira']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 4,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Sexta-Feira']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 5,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Sábado']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
+                    BarChartGroupData(
+                      x: 6,
+                      barRods: [
+                        BarChartRodData(
+                          toY: diasSemanaCount['Domingo']!.toDouble(),
+                          color: Colors.lightBlueAccent,
+                          width: 15,
+                          borderSide: BorderSide(color: Colors.greenAccent, width: 1),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -125,29 +297,16 @@ class LoggedInScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Expanded(
-              child: ListView(
-                children: <Widget>[
-                  ListTile(
-                    title: Text('Segunda-feira: Matemática'),
-                    subtitle: Text('10:00 - 11:30'),
-                  ),
-                  ListTile(
-                    title: Text('Terça-feira: Física'),
-                    subtitle: Text('11:00 - 12:30'),
-                  ),
-                  ListTile(
-                    title: Text('Quarta-feira: Química'),
-                    subtitle: Text('09:00 - 10:30'),
-                  ),
-                  ListTile(
-                    title: Text('Quinta-feira: Biologia'),
-                    subtitle: Text('08:00 - 09:30'),
-                  ),
-                  ListTile(
-                    title: Text('Sexta-feira: História'),
-                    subtitle: Text('13:00 - 14:30'),
-                  ),
-                ],
+              child: ListView.builder(
+                itemCount: aulas.length,
+                itemBuilder: (context, index) {
+                  final aula = aulas[index];
+                  return ListTile(
+                    title: Text(aula['disciplina']),
+                    subtitle: Text(
+                        '${aula['diaSemana']}: ${aula['horaInicio']} - ${aula['horaTermino']}'),
+                  );
+                },
               ),
             ),
           ],
@@ -156,4 +315,3 @@ class LoggedInScreen extends StatelessWidget {
     );
   }
 }
-

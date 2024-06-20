@@ -1,12 +1,13 @@
 // ignore_for_file: use_key_in_widget_constructors, prefer_const_constructors, library_private_types_in_public_api
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'sign_up_screen.dart';
 import 'forgot_password_screen.dart';
 import 'logged_in_screen.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(MyApp());
@@ -38,14 +39,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login(BuildContext context) async {
     if (_formKey.currentState?.validate() ?? false) {
-      // Simulando uma tentativa de login
-      if (_emailController.text == "user@puccampinas.edu.br" && _passwordController.text == "password") {
+      try {
+        UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => LoggedInScreen()),
         );
-      } else {
+      } on FirebaseAuthException catch (e) {
         String message = 'Email ou senha incorretos.';
+        if (e.code == 'user-not-found') {
+          message = 'Nenhum usuário encontrado para esse email.';
+        } else if (e.code == 'wrong-password') {
+          message = 'Senha incorreta fornecida para esse usuário.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
